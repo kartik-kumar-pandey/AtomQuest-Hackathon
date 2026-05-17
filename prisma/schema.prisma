@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String?
+  role          String    @default("EMPLOYEE") // EMPLOYEE, MANAGER, ADMIN
+  managerId     String?
+  manager       User?     @relation("ManagerToEmployee", fields: [managerId], references: [id])
+  employees     User[]    @relation("ManagerToEmployee")
+  goals         Goal[]    @relation("UserGoals")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Goal {
+  id            String    @id @default(cuid())
+  employeeId    String
+  employee      User      @relation("UserGoals", fields: [employeeId], references: [id])
+  title         String
+  description   String?
+  thrustArea    String?
+  uom           String    // MIN, MAX, TIMELINE, ZERO
+  target        Float
+  weightage     Float
+  status        String    @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, REJECTED, LOCKED
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  checkins      Checkin[]
+}
+
+model Checkin {
+  id              String    @id @default(cuid())
+  goalId          String
+  goal            Goal      @relation(fields: [goalId], references: [id])
+  quarter         String    // Q1, Q2, Q3, Q4
+  achievement     Float
+  status          String    // NOT_STARTED, ON_TRACK, COMPLETED
+  comment         String?
+  managerComment  String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([goalId, quarter])
+}
+
+model SharedGoal {
+  id             String    @id @default(cuid())
+  masterGoalId   String
+  employeeGoalId String
+  primaryOwnerId String
+  createdAt      DateTime  @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  entityType String   // Goal, Checkin
+  entityId   String
+  changedBy  String
+  oldValue   String?
+  newValue   String?
+  timestamp  DateTime @default(now())
+}
