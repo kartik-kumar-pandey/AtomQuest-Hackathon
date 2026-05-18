@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Trash2, Pencil, Send, CheckCircle, X, Loader2, Info, Sparkles } from "lucide-react"
+import { Plus, Trash2, Pencil, Send, CheckCircle, X, Loader2, Info } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 
@@ -43,9 +43,6 @@ export default function GoalsPage() {
   const [editGoal, setEditGoal] = useState<Goal | null>(null)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  const [aiPrompt, setAiPrompt] = useState("")
-  const [aiLoading, setAiLoading] = useState(false)
-  const [aiAdvice, setAiAdvice] = useState("")
   const [form, setForm] = useState({ title: "", description: "", thrustArea: "", uom: "MIN", target: "", weightage: "" })
   const isFullyLocked = editGoal?.status === "LOCKED"
   const isFieldsLocked = !!(editGoal && (editGoal.status === "APPROVED" || editGoal.status === "SUBMITTED"))
@@ -81,76 +78,6 @@ export default function GoalsPage() {
     setEditGoal(goal)
     setForm({ title: goal.title, description: goal.description ?? "", thrustArea: goal.thrustArea ?? "", uom: goal.uom, target: String(goal.target), weightage: String(goal.weightage) })
     setShowForm(true)
-    setAiAdvice("")
-  }
-
-  const handleAiSuggest = async () => {
-    if (!aiPrompt.trim()) return
-    if (aiPrompt.trim().length < 8) {
-      setError("Add a bit more detail (e.g. “Reduce inventory stockouts by 10%”) — one word is too vague.")
-      return
-    }
-    setAiLoading(true)
-    setError("")
-    const controller = new AbortController()
-    const clientTimeout = setTimeout(() => controller.abort(), 28000)
-    try {
-      const res = await fetch("/api/ai/suggest-goal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          prompt: aiPrompt,
-          currentWeightage: totalWeightage,
-          goalCount: goals.length,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error || "AI suggestion failed")
-        return
-      }
-      setForm({
-        title: data.title ?? "",
-        description: data.description ?? "",
-        thrustArea: data.thrustArea ?? "",
-        uom: data.uom ?? "MIN",
-        target: String(data.target ?? ""),
-        weightage: String(data.weightage ?? ""),
-      })
-      setSuccess("AI filled the form — review and save.")
-      setTimeout(() => setSuccess(""), 4000)
-    } catch (e) {
-      if (e instanceof Error && e.name === "AbortError") {
-        setError("Request timed out. Restart dev server after .env change, or try a clearer prompt.")
-      } else {
-        setError("Could not reach AI service")
-      }
-    } finally {
-      clearTimeout(clientTimeout)
-      setAiLoading(false)
-    }
-  }
-
-  const handleAiWeightCoach = async () => {
-    setAiLoading(true)
-    setError("")
-    try {
-      const res = await fetch("/api/ai/weightage-coach", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ goals, totalWeightage }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error || "AI coach failed")
-        return
-      }
-      setAiAdvice(data.advice ?? "")
-    } catch {
-      setError("Could not reach AI service")
-    }
-    setAiLoading(false)
   }
 
   const handleSubmitForm = async (e: React.FormEvent) => {
@@ -325,17 +252,6 @@ export default function GoalsPage() {
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center gap-3">
             <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>Total Weightage</p>
-            {goals.length > 0 && (
-              <button
-                type="button"
-                onClick={handleAiWeightCoach}
-                disabled={aiLoading || submitting}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 transition-all hover:bg-indigo-100 disabled:opacity-50"
-              >
-                {aiLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                AI weight tips
-              </button>
-            )}
             {totalWeightage !== 100 && goals.length > 0 && (
               <button
                 onClick={autoBalance}
@@ -363,12 +279,6 @@ export default function GoalsPage() {
             Min 10% per goal · Max 8 goals · Total must equal 100% to submit
           </p>
         </div>
-        {aiAdvice && (
-          <div className="mt-3 p-3 rounded-xl text-xs whitespace-pre-wrap bg-indigo-50 border border-indigo-100 text-indigo-900">
-            <span className="font-semibold flex items-center gap-1 mb-1"><Sparkles className="w-3 h-3" /> AI coach</span>
-            {aiAdvice}
-          </div>
-        )}
       </div>
 
       {/* Notifications */}
@@ -406,30 +316,6 @@ export default function GoalsPage() {
             <div className="flex items-center gap-2 p-3 rounded-xl mb-4 text-xs font-medium" style={{ background: "oklch(0.7 0.18 55 / 10%)", border: "1px solid oklch(0.7 0.18 55 / 20%)", color: "oklch(0.7 0.18 55)" }}>
               <Info className="w-4 h-4 flex-shrink-0" />
               <span>This goal is approved/submitted. Title, Target, and UoM are locked; you can adjust the weightage to balance your sheet.</span>
-            </div>
-          )}
-
-          {!editGoal && !isFieldsLocked && (
-            <div className="p-4 rounded-xl mb-4 bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100">
-              <p className="text-sm font-medium text-slate-800 mb-2 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-indigo-600" />
-                Suggest a SMART goal with AI
-              </p>
-              <textarea
-                className="w-full px-3 py-2 rounded-lg text-sm border border-indigo-200 bg-white text-slate-800 min-h-[72px] outline-none focus:ring-2 focus:ring-indigo-300"
-                placeholder="e.g. Reduce warehouse stockouts by 10% this quarter"
-                value={aiPrompt}
-                onChange={e => setAiPrompt(e.target.value)}
-              />
-              <button
-                type="button"
-                onClick={handleAiSuggest}
-                disabled={aiLoading || !aiPrompt.trim()}
-                className="mt-2 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                {aiLoading ? "Generating… (usually 5–15 sec)" : "Generate goal fields"}
-              </button>
             </div>
           )}
 

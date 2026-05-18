@@ -59,7 +59,7 @@ export default function Sidebar() {
           <Target className="w-5 h-5 text-white" />
         </motion.div>
         <div>
-          <p className="font-bold text-slate-900 text-sm leading-none">Atomquest</p>
+          <p className="font-bold text-slate-900 text-sm leading-none">MyGoal</p>
           <p className="text-xs mt-0.5 text-slate-500">Goal Portal</p>
         </div>
       </div>

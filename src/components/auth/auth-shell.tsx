@@ -25,7 +25,7 @@ export function AuthShell({ children, title, subtitle, footer }: AuthShellProps)
               style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}>
               <Target className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold tracking-tight" style={{ color: "#1e1b4b" }}>Atomquest</span>
+            <span className="text-xl font-bold tracking-tight" style={{ color: "#1e1b4b" }}>MyGoal</span>
           </Link>
           <p className="mt-2 text-sm font-medium" style={{ color: "#6366f1" }}>Goal Tracking Portal</p>
         </div>

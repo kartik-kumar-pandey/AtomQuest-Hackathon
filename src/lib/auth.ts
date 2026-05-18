@@ -16,25 +16,30 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Missing credentials")
         }
         
-        const user = await db.user.findUnique({
-          where: { email: credentials.email.trim().toLowerCase() },
-        })
+        try {
+          const user = await db.user.findUnique({
+            where: { email: credentials.email.trim().toLowerCase() },
+          })
 
-        if (!user || !user.password) {
-          throw new Error("Invalid credentials")
-        }
+          if (!user || !user.password) {
+            throw new Error("Invalid credentials")
+          }
 
-        const isValid = await bcrypt.compare(credentials.password, user.password)
-        
-        if (!isValid) {
-          throw new Error("Invalid credentials")
-        }
+          const isValid = await bcrypt.compare(credentials.password, user.password)
+          
+          if (!isValid) {
+            throw new Error("Invalid credentials")
+          }
 
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          }
+        } catch (error) {
+          console.error("[auth] Authorize error:", error)
+          return null
         }
       }
     })
@@ -61,4 +66,5 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
+  secret: process.env.NEXTAUTH_SECRET,
 }
