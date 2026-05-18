@@ -11,7 +11,7 @@ const prismaDb = createPrismaClient()
 
 async function runTests() {
   console.log("\x1b[35m%s\x1b[0m", "==================================================")
-  console.log("\x1b[35m%s\x1b[0m", "   ATOMQUEST SYSTEM INTEGRITY & VALIDATION SUITE   ")
+  console.log("\x1b[35m%s\x1b[0m", "   MYGOALS SYSTEM INTEGRITY & VALIDATION SUITE   ")
   console.log("\x1b[35m%s\x1b[0m", "==================================================")
 
   let passed = 0

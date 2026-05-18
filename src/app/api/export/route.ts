@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
   return new NextResponse(csv, {
     headers: {
       "Content-Type": "text/csv",
-      "Content-Disposition": `attachment; filename="atomquest-achievement-report-${new Date().toISOString().slice(0, 10)}.csv"`,
+      "Content-Disposition": `attachment; filename="mygoals-achievement-report-${new Date().toISOString().slice(0, 10)}.csv"`,
     },
   })
 }

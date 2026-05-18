@@ -1,6 +1,6 @@
-# Atomquest Goal Portal — Comprehensive Testing Playbook
+# MYGoals Portal — Comprehensive Testing Playbook
 
-This playbook provides a detailed, step-by-step testing guide to verify **every single feature** of the Atomquest Goal Setting & Tracking Portal. It also contains instructions for running our custom automated validation test suite.
+This playbook provides a detailed, step-by-step testing guide to verify **every single feature** of the MYGoals Setting & Tracking Portal. It also contains instructions for running our custom automated validation test suite.
 
 ---
 
@@ -37,7 +37,7 @@ npx tsx scripts/verify-all.ts
 ### Expected Output:
 ```text
 ==================================================
-   ATOMQUEST SYSTEM INTEGRITY & VALIDATION SUITE   
+   MYGOALS SYSTEM INTEGRITY & VALIDATION SUITE   
 ==================================================
 
 • Test Stage 1: Database Connectivity & Models Check

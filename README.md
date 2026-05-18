@@ -1,6 +1,6 @@
-# AtomQuest — Enterprise Goal Setting & Tracking Portal
+# MYGoals — Enterprise Goal Setting & Tracking Portal
 
-AtomQuest is a comprehensive, production-ready enterprise goal management system built for the Atomberg Hackathon. It enables organizations to streamline their performance management processes by offering robust role-based goal setting, cascading Shared Goals (Departmental KPIs), and quarterly tracking with dynamic scoring algorithms based on Units of Measure (UoM).
+MYGoals is a comprehensive, production-ready enterprise goal management system built for the Atomberg Hackathon. It enables organizations to streamline their performance management processes by offering robust role-based goal setting, cascading Shared Goals (Departmental KPIs), and quarterly tracking with dynamic scoring algorithms based on Units of Measure (UoM).
 
 ## 🌟 Key Features
 

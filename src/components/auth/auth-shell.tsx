@@ -82,7 +82,7 @@ export function AuthShell({ children, title, subtitle, footer }: AuthShellProps)
             <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}>
               <Target className="w-4 h-4 text-white" />
             </div>
-            <span className="text-lg font-bold" style={{ color: "#1e1b4b" }}>Atomquest</span>
+            <span className="text-lg font-bold" style={{ color: "#1e1b4b" }}>MYGoals</span>
           </div>
           <div className="mb-8">
             <h2 className="text-2xl font-bold tracking-tight" style={{ color: "#1e1b4b" }}>{title}</h2>
