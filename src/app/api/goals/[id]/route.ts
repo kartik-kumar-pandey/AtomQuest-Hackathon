@@ -38,6 +38,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
       const updated = await db.goal.update({ where: { id }, data: { status: "SUBMITTED" } })
       await logAudit("Goal", id, session.user.id, "GOAL_SUBMITTED", { status: goal.status }, { status: "SUBMITTED" })
+      
+      const emp = await db.user.findUnique({ where: { id: session.user.id } })
+      if (emp?.managerId) {
+        await db.notification.create({
+          data: {
+            userId: emp.managerId,
+            message: `${session.user.name} submitted their goals for approval.`,
+            link: "/manager/approvals"
+          }
+        })
+      }
+      
       return NextResponse.json(updated)
     }
 
@@ -84,6 +96,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json(updated)
     }
 
+    // Employee: update progress on approved/locked goals
+    if (role === "EMPLOYEE" && body.action === "update-progress") {
+      if (goal.employeeId !== session.user.id)
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      if (goal.status !== "APPROVED" && goal.status !== "LOCKED")
+        return NextResponse.json({ error: "Can only update progress on approved or locked goals." }, { status: 400 })
+
+      const progress = Math.max(0, Math.min(100, Number(body.progress)))
+      const updated = await db.goal.update({
+        where: { id },
+        data: { progress },
+      })
+      await logAudit("Goal", id, session.user.id, "PROGRESS_UPDATED", { progress: goal.progress }, { progress })
+      return NextResponse.json(updated)
+    }
+
     // Manager: approve, reject, inline edit, or approve all for employee
     if (role === "MANAGER") {
       const employee = await db.user.findUnique({ where: { id: goal.employeeId } })
@@ -111,6 +139,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           await logAudit("Goal", g.id, session.user.id, "GOAL_LOCKED", { status: g.status }, { status: "LOCKED" })
           updated.push(result)
         }
+        
+        await db.notification.create({
+          data: {
+            userId: employeeId,
+            message: `Your manager has APPROVED all your submitted goals.`,
+            link: "/employee/goals"
+          }
+        })
+
         return NextResponse.json({ success: true, count: updated.length, goals: updated })
       }
 
@@ -118,12 +155,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         const old = { status: goal.status }
         const updated = await db.goal.update({ where: { id }, data: { status: "LOCKED" } })
         await logAudit("Goal", id, session.user.id, "GOAL_LOCKED", old, { status: "LOCKED" })
+        await db.notification.create({
+          data: {
+            userId: goal.employeeId,
+            message: `Your manager has APPROVED your goal "${goal.title}".`,
+            link: "/employee/goals"
+          }
+        })
         return NextResponse.json(updated)
       }
 
       if (body.action === "reject") {
         const updated = await db.goal.update({ where: { id }, data: { status: "REJECTED" } })
         await logAudit("Goal", id, session.user.id, "GOAL_REJECTED", { status: goal.status }, { status: "REJECTED" })
+        await db.notification.create({
+          data: {
+            userId: goal.employeeId,
+            message: `Your manager has REJECTED your goal "${goal.title}".`,
+            link: "/employee/goals"
+          }
+        })
         return NextResponse.json(updated)
       }
 

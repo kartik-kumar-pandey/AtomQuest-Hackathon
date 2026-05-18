@@ -10,6 +10,7 @@ export type AuditAction =
   | "GOAL_EDITED"
   | "CHECKIN_UPDATED"
   | "MANAGER_COMMENT"
+  | "PROGRESS_UPDATED"
 
 export async function logAudit(
   entityType: string,

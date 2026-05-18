@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Trash2, Pencil, Send, CheckCircle, X, Loader2, Info } from "lucide-react"
+import { Plus, Trash2, Pencil, Send, CheckCircle, X, Loader2, Info, Sparkles, TrendingUp } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 
@@ -13,6 +13,7 @@ type Goal = {
   uom: string
   target: number
   weightage: number
+  progress: number
   status: string
 }
 
@@ -39,8 +40,11 @@ export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [aiLoading, setAiLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editGoal, setEditGoal] = useState<Goal | null>(null)
+  const [progressGoal, setProgressGoal] = useState<Goal | null>(null)
+  const [progressValue, setProgressValue] = useState("")
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [form, setForm] = useState({ title: "", description: "", thrustArea: "", uom: "MIN", target: "", weightage: "" })
@@ -111,10 +115,74 @@ export default function GoalsPage() {
     setSubmitting(false)
   }
 
+  const handleAIAssist = async () => {
+    if (!form.title) {
+      setError("Please provide at least a basic title for the AI to enhance.")
+      return
+    }
+    setError("")
+    setAiLoading(true)
+    try {
+      const res = await fetch("/api/goals/smart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: form.title,
+          description: form.description,
+          uom: form.uom,
+          target: Number(form.target || 0)
+        })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "AI Enhancement failed.")
+      
+      setForm(f => ({
+        ...f,
+        title: data.title || f.title,
+        description: data.description || f.description,
+        uom: data.uom || f.uom,
+        target: data.target != null ? String(data.target) : f.target
+      }))
+      setSuccess("AI successfully made your goal SMART!")
+      setTimeout(() => setSuccess(""), 4000)
+    } catch (err: any) {
+      setError(err.message)
+    }
+    setAiLoading(false)
+  }
+
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this goal?")) return
     await fetch(`/api/goals/${id}`, { method: "DELETE" })
     fetchGoals()
+  }
+
+  const handleUpdateProgress = async () => {
+    if (!progressGoal) return
+    const val = Number(progressValue)
+    if (isNaN(val) || val < 0 || val > 100) {
+      setError("Progress must be between 0 and 100.")
+      return
+    }
+    setSubmitting(true)
+    setError("")
+    try {
+      const res = await fetch(`/api/goals/${progressGoal.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update-progress", progress: val }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to update progress.")
+      setSuccess(`Progress updated to ${val}%!`)
+      setTimeout(() => setSuccess(""), 3000)
+      setProgressGoal(null)
+      setProgressValue("")
+      fetchGoals()
+    } catch (err: any) {
+      setError(err.message)
+    }
+    setSubmitting(false)
   }
 
   const handleSubmitAll = async () => {
@@ -150,25 +218,43 @@ export default function GoalsPage() {
     setError("")
     setSubmitting(true)
     try {
-      // Proportional scaling for all goals
-      let newWeights = goals.map(g => ({
+      const lockedGoals = goals.filter(g => g.status === "LOCKED")
+      const unlockedGoals = goals.filter(g => g.status !== "LOCKED")
+      
+      if (unlockedGoals.length === 0) {
+        throw new Error("All goals are locked. Cannot auto-balance.")
+      }
+
+      const lockedSum = lockedGoals.reduce((s, g) => s + g.weightage, 0)
+      const remainingTarget = 100 - lockedSum
+
+      if (remainingTarget < 0) {
+        throw new Error("Locked goals already exceed 100% weightage.")
+      }
+
+      const unlockedCurrentSum = unlockedGoals.reduce((s, g) => s + g.weightage, 0)
+      
+      let newWeights = unlockedGoals.map(g => ({
         id: g.id,
-        weightage: Math.round((g.weightage / currentSum) * 100)
+        // If unlockedSum is 0, distribute equally, else proportional
+        weightage: unlockedCurrentSum === 0 
+          ? Math.round(remainingTarget / unlockedGoals.length)
+          : Math.round((g.weightage / unlockedCurrentSum) * remainingTarget)
       }))
 
-      // Clamp to minimum 10%
+      // Clamp to minimum 10% 
       newWeights = newWeights.map(nw => ({
         ...nw,
         weightage: Math.max(10, nw.weightage)
       }))
 
-      // Redistribute residual difference to ensure exactly 100%
+      // Redistribute residual difference to ensure sum of unlocked equals remainingTarget
       let newSum = newWeights.reduce((s, nw) => s + nw.weightage, 0)
-      let diff = 100 - newSum
+      let diff = remainingTarget - newSum
       if (diff !== 0) {
         // Add/subtract difference from the goal with largest weight
         let maxIdx = 0
-        let maxWeight = 0
+        let maxWeight = -1
         for (let i = 0; i < newWeights.length; i++) {
           if (newWeights[i].weightage > maxWeight) {
             maxWeight = newWeights[i].weightage
@@ -178,9 +264,10 @@ export default function GoalsPage() {
         newWeights[maxIdx].weightage += diff
       }
 
-      // Proactively update each goal
+      // Proactively update each non-locked goal
       for (const nw of newWeights) {
-        const originalGoal = goals.find(g => g.id === nw.id)!
+        const originalGoal = unlockedGoals.find(g => g.id === nw.id)!
+        if (originalGoal.weightage === nw.weightage) continue // skip if no change needed
         
         const res = await fetch(`/api/goals/${nw.id}`, {
           method: "PATCH",
@@ -399,9 +486,20 @@ export default function GoalsPage() {
                 />
               </div>
             </div>
-            <div className="flex gap-3 justify-end">
+            <div className="flex gap-3 justify-end items-center mt-2">
+              <button 
+                type="button" 
+                onClick={handleAIAssist} 
+                disabled={aiLoading || submitting || isFieldsLocked} 
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 mr-auto" 
+                style={{ background: "linear-gradient(135deg, oklch(0.85 0.1 80), oklch(0.8 0.15 65))", color: "oklch(0.3 0.1 65)" }}
+              >
+                {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {aiLoading ? "Thinking..." : "✨ Make it SMART"}
+              </button>
+
               <button type="button" onClick={resetForm} className="px-4 py-2 rounded-xl text-sm font-medium" style={{ background: "var(--muted)", color: "var(--muted-foreground)" }}>Cancel</button>
-              <button type="submit" disabled={submitting} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+              <button type="submit" disabled={submitting || aiLoading} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
                 style={{ background: "oklch(0.55 0.2 265)" }}>
                 {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                 {editGoal ? "Update Goal" : "Add Goal"}
@@ -419,49 +517,124 @@ export default function GoalsPage() {
           <p className="font-medium">No goals yet. Click Add Goal to begin.</p>
         </div>
       ) : (
-        <div className="rounded-2xl overflow-hidden" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                {["Goal", "Area", "UoM", "Target", "Weight", "Status", ""].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--muted-foreground)" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y" style={{ borderColor: "var(--border)" }}>
-              {goals.map(goal => (
-                <tr key={goal.id} className="hover:bg-slate-50/5 transition-colors">
-                  <td className="px-4 py-3">
-                    <p className="font-medium truncate max-w-xs" style={{ color: "var(--foreground)" }}>{goal.title}</p>
-                    {goal.description && <p className="text-xs truncate max-w-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>{goal.description}</p>}
-                  </td>
-                  <td className="px-4 py-3 text-xs" style={{ color: "var(--muted-foreground)" }}>{goal.thrustArea || "—"}</td>
-                  <td className="px-4 py-3 text-xs" style={{ color: "var(--muted-foreground)" }}>{goal.uom}</td>
-                  <td className="px-4 py-3 font-medium" style={{ color: "var(--foreground)" }}>{goal.target}</td>
-                  <td className="px-4 py-3 font-bold" style={{ color: "oklch(0.55 0.2 265)" }}>{goal.weightage}%</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${statusColors[goal.status]}`}>{goal.status}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      {goal.status !== "LOCKED" && (
-                        <button id={`edit-goal-${goal.id}`} onClick={() => openEdit(goal)} className="p-1.5 rounded-lg hover:bg-slate-500/10 transition-colors">
-                          <Pencil className="w-3.5 h-3.5" style={{ color: "var(--muted-foreground)" }} />
-                        </button>
-                      )}
-                      {(goal.status === "DRAFT" || goal.status === "REJECTED") && (
-                        <button id={`delete-goal-${goal.id}`} onClick={() => handleDelete(goal.id)} className="p-1.5 rounded-lg hover:bg-red-500/10 transition-colors">
-                          <Trash2 className="w-3.5 h-3.5" style={{ color: "oklch(0.577 0.245 27)" }} />
-                        </button>
-                      )}
+        <div className="space-y-3">
+          {goals.map(goal => {
+            const canTrackProgress = goal.status === "APPROVED" || goal.status === "LOCKED"
+            const progressPct = Math.min(100, goal.progress ?? 0)
+            const progressColor = progressPct >= 100 ? "oklch(0.65 0.16 155)" : progressPct >= 60 ? "oklch(0.7 0.18 55)" : "oklch(0.55 0.2 265)"
+            return (
+              <div key={goal.id} className="rounded-2xl p-4" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <p className="font-semibold text-sm" style={{ color: "var(--foreground)" }}>{goal.title}</p>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${statusColors[goal.status]}`}>{goal.status}</span>
+                      {goal.thrustArea && <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-slate-500/10 text-slate-400">{goal.thrustArea}</span>}
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    {goal.description && <p className="text-xs mb-2 line-clamp-1" style={{ color: "var(--muted-foreground)" }}>{goal.description}</p>}
+                    <div className="flex items-center gap-4 text-xs" style={{ color: "var(--muted-foreground)" }}>
+                      <span>Target: <strong style={{ color: "var(--foreground)" }}>{goal.target}</strong> ({goal.uom})</span>
+                      <span>Weight: <strong style={{ color: "oklch(0.55 0.2 265)" }}>{goal.weightage}%</strong></span>
+                    </div>
+                    {/* Progress Bar */}
+                    {canTrackProgress && (
+                      <div className="mt-3">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[11px] font-medium" style={{ color: "var(--muted-foreground)" }}>Progress</span>
+                          <span className="text-[11px] font-bold" style={{ color: progressColor }}>{progressPct}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
+                          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progressPct}%`, background: progressColor }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {canTrackProgress && (
+                      <button
+                        id={`progress-goal-${goal.id}`}
+                        onClick={() => { setProgressGoal(goal); setProgressValue(String(goal.progress ?? 0)) }}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all hover:scale-[1.03]"
+                        style={{ background: "oklch(0.65 0.16 155 / 15%)", color: "oklch(0.55 0.16 155)" }}
+                        title="Update Progress"
+                      >
+                        <TrendingUp className="w-3.5 h-3.5" />
+                        Update
+                      </button>
+                    )}
+                    {goal.status !== "LOCKED" && (
+                      <button id={`edit-goal-${goal.id}`} onClick={() => openEdit(goal)} className="p-1.5 rounded-lg hover:bg-slate-500/10 transition-colors" title="Edit">
+                        <Pencil className="w-3.5 h-3.5" style={{ color: "var(--muted-foreground)" }} />
+                      </button>
+                    )}
+                    {(goal.status === "DRAFT" || goal.status === "REJECTED") && (
+                      <button id={`delete-goal-${goal.id}`} onClick={() => handleDelete(goal.id)} className="p-1.5 rounded-lg hover:bg-red-500/10 transition-colors" title="Delete">
+                        <Trash2 className="w-3.5 h-3.5" style={{ color: "oklch(0.577 0.245 27)" }} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Progress Update Modal */}
+      {progressGoal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-2xl p-6 shadow-2xl" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="font-bold text-base" style={{ color: "var(--foreground)" }}>Update Progress</h2>
+                <p className="text-xs mt-0.5 line-clamp-1" style={{ color: "var(--muted-foreground)" }}>{progressGoal.title}</p>
+              </div>
+              <button onClick={() => { setProgressGoal(null); setProgressValue("") }}><X className="w-5 h-5" style={{ color: "var(--muted-foreground)" }} /></button>
+            </div>
+
+            <div className="mb-5">
+              <div className="flex justify-between text-sm mb-2">
+                <span style={{ color: "var(--muted-foreground)" }}>Achievement %</span>
+                <span className="font-bold" style={{ color: "oklch(0.55 0.2 265)" }}>{progressValue || 0}%</span>
+              </div>
+              <input
+                type="range"
+                min="0" max="100" step="1"
+                value={progressValue || 0}
+                onChange={e => setProgressValue(e.target.value)}
+                className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                style={{ accentColor: "oklch(0.55 0.2 265)" }}
+              />
+              <div className="flex justify-between text-[10px] mt-1" style={{ color: "var(--muted-foreground)" }}>
+                <span>0%</span><span>50%</span><span>100%</span>
+              </div>
+              <input
+                type="number" min="0" max="100"
+                value={progressValue}
+                onChange={e => setProgressValue(e.target.value)}
+                className="w-full mt-3 px-4 py-2.5 rounded-xl text-sm outline-none text-center font-bold"
+                style={{ background: "var(--muted)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+                placeholder="Or type exact %"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => { setProgressGoal(null); setProgressValue("") }} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium" style={{ background: "var(--muted)", color: "var(--muted-foreground)" }}>Cancel</button>
+              <button
+                onClick={handleUpdateProgress}
+                disabled={submitting}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+                style={{ background: "linear-gradient(135deg, oklch(0.55 0.16 155), oklch(0.5 0.18 185))" }}
+              >
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                Save Progress
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
   )
 }
+

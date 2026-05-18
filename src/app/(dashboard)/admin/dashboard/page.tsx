@@ -53,12 +53,16 @@ export default async function AdminDashboard() {
   const employeeCompletion = employees.map(emp => {
     const goalCount = emp.goals.length
     const checkinsDone = emp.goals.filter(g => g.checkins.some(c => c.quarter === activeQuarter)).length
+    const avgProgress = goalCount > 0
+      ? Math.round(emp.goals.reduce((s, g) => s + (g.progress ?? 0), 0) / goalCount)
+      : 0
     return {
       name: emp.name,
       email: emp.email,
       manager: emp.manager?.name ?? "—",
       goalCount,
       checkinsDone,
+      avgProgress,
       complete: goalCount > 0 && checkinsDone >= goalCount,
     }
   })

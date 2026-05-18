@@ -24,6 +24,7 @@ export default async function EmployeeDashboard() {
     target: g.target,
     weightage: g.weightage,
     status: g.status,
+    progress: g.progress ?? 0,
     checkins: g.checkins.map(c => ({
       achievement: c.achievement,
       createdAt: c.createdAt.toISOString(),

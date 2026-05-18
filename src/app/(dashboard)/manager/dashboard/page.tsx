@@ -17,7 +17,7 @@ export default async function ManagerDashboard() {
     id: emp.id,
     name: emp.name,
     email: emp.email,
-    goals: emp.goals.map(g => ({ status: g.status, weightage: g.weightage })),
+    goals: emp.goals.map(g => ({ status: g.status, weightage: g.weightage, progress: g.progress ?? 0 })),
   }))
 
   return <ManagerDashboardView team={serializedTeam} />

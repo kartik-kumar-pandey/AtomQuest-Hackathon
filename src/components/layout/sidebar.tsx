@@ -1,14 +1,16 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import {
   Target, LayoutDashboard, CheckSquare, BarChart3,
-  Users, Settings, LogOut, ChevronRight, ClipboardList, Shield
+  Users, Settings, LogOut, ChevronRight, ClipboardList, Shield, Menu, X
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
+import { NotificationsBell } from "./notifications-bell"
 
 const employeeNav = [
   { href: "/employee/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -43,26 +45,55 @@ export default function Sidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
   const role = session?.user?.role ?? "EMPLOYEE"
+  const [isOpen, setIsOpen] = useState(false)
 
   const navItems =
     role === "ADMIN" ? adminNav : role === "MANAGER" ? managerNav : employeeNav
 
   return (
-    <aside className="flex flex-col w-64 h-screen sticky top-0 shrink-0 bg-white border-r border-slate-200/80 shadow-[4px_0_24px_rgba(99,102,241,0.04)]">
-      <div className="flex shrink-0 items-center gap-3 px-6 py-5 border-b border-slate-100">
-        <motion.div
-          className="w-9 h-9 rounded-xl flex items-center justify-center"
-          style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
-          whileHover={{ scale: 1.05 }}
-          transition={{ type: "spring", stiffness: 400 }}
-        >
-          <Target className="w-5 h-5 text-white" />
-        </motion.div>
-        <div>
-          <p className="font-bold text-slate-900 text-sm leading-none">MyGoal</p>
-          <p className="text-xs mt-0.5 text-slate-500">Goal Portal</p>
+    <>
+      {/* Mobile Header */}
+      <div className="md:hidden shrink-0 flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 z-40 shadow-sm relative">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}>
+            <Target className="w-4 h-4 text-white" />
+          </div>
+          <span className="font-bold text-slate-900 text-sm">MYGoals</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <NotificationsBell />
+          <button onClick={() => setIsOpen(true)} className="p-1.5 bg-slate-100 text-slate-600 hover:text-slate-900 rounded-md">
+            <Menu className="w-5 h-5" />
+          </button>
         </div>
       </div>
+
+      {/* Mobile Overlay */}
+      {isOpen && <div className="fixed inset-0 bg-slate-900/40 z-40 md:hidden backdrop-blur-sm" onClick={() => setIsOpen(false)} />}
+
+      <aside className={cn(
+        "flex flex-col w-64 h-screen fixed md:sticky top-0 shrink-0 bg-white border-r border-slate-200/80 shadow-[4px_0_24px_rgba(99,102,241,0.04)] z-50 transition-transform duration-300 ease-in-out",
+        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      )}>
+        <div className="flex shrink-0 items-center justify-between gap-3 px-6 py-5 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <motion.div
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 400 }}
+            >
+              <Target className="w-5 h-5 text-white" />
+            </motion.div>
+            <div>
+              <p className="font-bold text-slate-900 text-sm leading-none">MYGoals</p>
+              <p className="text-xs mt-0.5 text-slate-500">Goal Portal</p>
+            </div>
+          </div>
+          <button className="md:hidden text-slate-400 p-1 rounded-md hover:bg-slate-100" onClick={() => setIsOpen(false)}>
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
       <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-0.5">
         <p className="text-xs font-semibold uppercase tracking-widest px-3 mb-3 text-slate-400">
@@ -79,6 +110,7 @@ export default function Sidebar() {
             >
               <Link
                 href={href}
+                onClick={() => setIsOpen(false)}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
                   active
@@ -120,6 +152,7 @@ export default function Sidebar() {
               {role}
             </span>
           </div>
+          <NotificationsBell direction="up" />
           <button
             id="logout-btn"
             onClick={() => signOut({ callbackUrl: "/login" })}
@@ -130,6 +163,7 @@ export default function Sidebar() {
           </button>
         </div>
       </motion.div>
-    </aside>
+      </aside>
+    </>
   )
 }

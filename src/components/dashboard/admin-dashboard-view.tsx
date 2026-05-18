@@ -6,6 +6,7 @@ import { formatAuditEntry } from "@/lib/audit-format"
 import { PageShell, PageHeader, StatCard, TrackedCard, PrimaryButton, AnimatedProgress, statusBadge } from "@/components/ui/tracked"
 import { ScrollReveal, StaggerGrid, StaggerItem } from "@/components/ui/motion"
 import { motion } from "framer-motion"
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts"
 
 const statIcons: Record<string, LucideIcon> = {
   users: Users,
@@ -21,7 +22,7 @@ type Props = {
   stats: { label: string; value: number; icon: StatIconKey; color: string }[]
   goalStatuses: { label: string; count: number; color: string }[]
   totalGoals: number
-  employeeCompletion: { name: string; checkinsDone: number; goalCount: number; manager: string; complete: boolean }[]
+  employeeCompletion: { name: string; checkinsDone: number; goalCount: number; manager: string; complete: boolean; avgProgress: number }[]
   managerCompletion: { name: string; reviewed: number; total: number; teamSize: number; complete: boolean }[]
   activeQuarter: string
   recentAuditLogs: {
@@ -103,6 +104,30 @@ export function AdminDashboardView(props: Props) {
           </div>
         </TrackedCard>
       </ScrollReveal>
+
+      {/* Org-wide employee progress chart */}
+      {employeeCompletion.length > 0 && (
+        <ScrollReveal delay={0.08} className="mb-8">
+          <TrackedCard className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-slate-900">Employee Progress Overview</h2>
+              <span className="text-xs text-slate-400">Avg progress % on approved goals</span>
+            </div>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={employeeCompletion.map((e, i) => ({ name: e.name.split(" ")[0], progress: e.avgProgress, color: ["#6366f1","#8b5cf6","#06b6d4","#10b981","#f59e0b","#ef4444"][i % 6] }))} barSize={28} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                <Tooltip formatter={(v) => [`${v}%`, "Progress"]} contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} cursor={{ fill: "rgba(99,102,241,0.06)" }} />
+                <Bar dataKey="progress" radius={[8, 8, 0, 0]}>
+                  {employeeCompletion.map((_, i) => (
+                    <Cell key={i} fill={["#6366f1","#8b5cf6","#06b6d4","#10b981","#f59e0b","#ef4444"][i % 6]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </TrackedCard>
+        </ScrollReveal>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <ScrollReveal delay={0.1}>
