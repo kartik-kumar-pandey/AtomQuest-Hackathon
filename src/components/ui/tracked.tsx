@@ -192,6 +192,44 @@ export function PrimaryButton({
   )
 }
 
+export function SecondaryButton({
+  href,
+  onClick,
+  children,
+  className,
+}: {
+  href?: string
+  onClick?: () => void
+  children: React.ReactNode
+  className?: string
+}) {
+  const cls = cn(
+    "inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all",
+    className,
+  )
+
+  if (href) {
+    return (
+      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="inline-flex">
+        <Link href={href} className={cls}>
+          {children}
+        </Link>
+      </motion.div>
+    )
+  }
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      className={cls}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      {children}
+    </motion.button>
+  )
+}
+
 export const statusBadge: Record<string, string> = {
   DRAFT: "bg-slate-100 text-slate-600",
   SUBMITTED: "bg-amber-50 text-amber-700",

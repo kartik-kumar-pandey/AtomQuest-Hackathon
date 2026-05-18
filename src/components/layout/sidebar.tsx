@@ -68,8 +68,9 @@ export default function Sidebar() {
       {isOpen && <div className="fixed inset-0 bg-slate-900/40 z-40 md:hidden backdrop-blur-sm" onClick={() => setIsOpen(false)} />}
 
       <aside className={cn(
-        "flex flex-col w-64 h-screen fixed md:sticky top-0 shrink-0 bg-white border-r border-slate-200/80 shadow-[4px_0_24px_rgba(99,102,241,0.04)] z-50 transition-transform duration-300 ease-in-out",
-        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        "flex flex-col w-64 h-screen fixed left-0 md:sticky top-0 shrink-0 bg-white border-r border-slate-200/80 shadow-[4px_0_24px_rgba(99,102,241,0.04)] z-50 transition-transform duration-300 ease-in-out",
+        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        !isOpen && "invisible md:visible"
       )}>
         <div className="flex shrink-0 items-center justify-between gap-3 px-6 py-5 border-b border-slate-100">
           <Logo showText={true} size={36} />

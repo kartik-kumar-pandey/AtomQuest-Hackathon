@@ -1,8 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { Users, ClipboardList, CheckCircle, Clock, TrendingUp } from "lucide-react"
-import { PageShell, PageHeader, StatCard, TrackedCard, PrimaryButton } from "@/components/ui/tracked"
+import { Users, ClipboardList, CheckCircle, Clock, TrendingUp, Download } from "lucide-react"
+import { PageShell, PageHeader, StatCard, TrackedCard, PrimaryButton, SecondaryButton } from "@/components/ui/tracked"
 import { ScrollReveal, StaggerGrid, StaggerItem } from "@/components/ui/motion"
 import { motion } from "framer-motion"
 import {
@@ -46,7 +46,26 @@ export function ManagerDashboardView({ team }: { team: TeamMember[] }) {
 
   return (
     <PageShell>
-      <PageHeader title="Team Dashboard" subtitle="Manage your team's goals, progress and quarterly check-ins" />
+      <PageHeader 
+        title="Team Dashboard" 
+        subtitle="Manage your team's goals, progress and quarterly check-ins" 
+        action={
+          <div className="flex items-center gap-3">
+            <a href="/api/export" className="inline-flex">
+              <SecondaryButton>
+                <Download className="w-4 h-4" />
+                Export CSV
+              </SecondaryButton>
+            </a>
+            <a href="/export/pdf" target="_blank" rel="noopener noreferrer" className="inline-flex">
+              <PrimaryButton>
+                <Download className="w-4 h-4" />
+                Export PDF
+              </PrimaryButton>
+            </a>
+          </div>
+        }
+      />
 
       <StaggerGrid className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
         {stats.map((s, i) => (

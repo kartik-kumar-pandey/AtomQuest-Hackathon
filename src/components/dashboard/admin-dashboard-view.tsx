@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Users, Target, CheckCircle, Shield, Download, type LucideIcon } from "lucide-react"
 import { formatAuditEntry } from "@/lib/audit-format"
-import { PageShell, PageHeader, StatCard, TrackedCard, PrimaryButton, AnimatedProgress, statusBadge } from "@/components/ui/tracked"
+import { PageShell, PageHeader, StatCard, TrackedCard, PrimaryButton, SecondaryButton, AnimatedProgress, statusBadge } from "@/components/ui/tracked"
 import { ScrollReveal, StaggerGrid, StaggerItem } from "@/components/ui/motion"
 import { motion } from "framer-motion"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts"
@@ -60,12 +60,20 @@ export function AdminDashboardView(props: Props) {
         title="Admin Dashboard"
         subtitle={activePhaseLabel ? `Active cycle: ${activePhaseLabel}` : "Organization-wide goal tracking overview"}
         action={
-          <a href="/api/export" className="inline-flex">
-            <PrimaryButton>
-              <Download className="w-4 h-4" />
-              Export Org Report
-            </PrimaryButton>
-          </a>
+          <div className="flex items-center gap-3">
+            <a href="/api/export" className="inline-flex">
+              <SecondaryButton>
+                <Download className="w-4 h-4" />
+                Export CSV
+              </SecondaryButton>
+            </a>
+            <a href="/export/pdf" target="_blank" rel="noopener noreferrer" className="inline-flex">
+              <PrimaryButton>
+                <Download className="w-4 h-4" />
+                Export PDF
+              </PrimaryButton>
+            </a>
+          </div>
         }
       />
 
