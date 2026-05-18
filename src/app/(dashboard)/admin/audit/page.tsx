@@ -16,16 +16,16 @@ export default async function AuditPage() {
     take: 100,
   })
 
-  const userIds = [...new Set(logs.map(l => l.changedBy))]
+  const userIds = [...new Set(logs.map((l: any) => l.changedBy))]
   const users = await db.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true } })
-  const userMap = Object.fromEntries(users.map(u => [u.id, u.name]))
+  const userMap = Object.fromEntries(users.map((u: any) => [u.id, u.name]))
 
-  const goalIds = logs.filter(l => l.entityType === "Goal").map(l => l.entityId)
+  const goalIds = logs.filter((l: any) => l.entityType === "Goal").map((l: any) => l.entityId)
   const goals = await db.goal.findMany({
     where: { id: { in: goalIds } },
     select: { id: true, title: true, status: true, employee: { select: { name: true } } },
   })
-  const goalMap = Object.fromEntries(goals.map(g => [g.id, g]))
+  const goalMap = Object.fromEntries(goals.map((g: any) => [g.id, g]))
 
   return (
     <div className="p-8 max-w-6xl mx-auto w-full">
@@ -58,7 +58,7 @@ export default async function AuditPage() {
                 </tr>
               </thead>
               <tbody className="divide-y" style={{ borderColor: "var(--border)" }}>
-                {logs.map(log => {
+                {logs.map((log: any) => {
                   const goal = log.entityType === "Goal" ? goalMap[log.entityId] : null
                   const summary = formatAuditEntry(log.oldValue, log.newValue)
                   const isUnlock = log.newValue?.includes("ADMIN_UNLOCK")

@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AtomQuest — Enterprise Goal Setting & Tracking Portal
 
-## Getting Started
+AtomQuest is a comprehensive, production-ready enterprise goal management system built for the Atomberg Hackathon. It enables organizations to streamline their performance management processes by offering robust role-based goal setting, cascading Shared Goals (Departmental KPIs), and quarterly tracking with dynamic scoring algorithms based on Units of Measure (UoM).
 
-First, run the development server:
+## 🌟 Key Features
 
+* **Role-Based Access Control (RBAC):** Distinct dashboards and capabilities for Employees, Managers, and HR Admins.
+* **Intelligent Goal Validation:** The system strictly enforces organizational rules, such as requiring an employee's total goal sheet weightage to equal exactly 100% before submission.
+* **Shared Cascading Goals:** Managers can define departmental goals and instantly "push" them down to specific team members. Any progress logged on the master goal cascades to all sub-goals seamlessly.
+* **Dynamic Progress Scoring:** Supports multiple calculation algorithms based on UoM (e.g., `MIN`, `MAX`, `TIMELINE`, `ZERO`).
+* **Quarterly Check-in Cycles:** Built-in time windows for Q1, Q2, Q3, and Q4 performance tracking.
+* **Admin Analytics & Auditing:** Beautiful glassmorphic dashboards for tracking completion rates, thrust area distributions, and an immutable audit trail of all systemic changes.
+* **Instant Export:** One-click CSV exports of the entire organization's goal status and achievements.
+
+## 💻 Tech Stack
+
+* **Frontend:** Next.js 14 (App Router), React 19, Tailwind CSS 4, Shadcn UI, Framer Motion
+* **Backend:** Next.js Server Actions & API Routes, NextAuth.js
+* **Database:** Prisma ORM, Neon Serverless PostgreSQL
+* **Deployment:** Vercel
+
+## 🚀 Live Demo
+
+[https://mygoals-tracking.vercel.app/](https://mygoals-tracking.vercel.app/)
+
+### Mock Accounts for Testing
+*(Password for all accounts: `password`)*
+
+| Role | Email | Description |
+|---|---|---|
+| **Admin** | `admin@atomberg.com` | Access org analytics, audits, and settings. |
+| **Manager** | `manager1@atomberg.com` | Approves goals, pushes shared goals. |
+| **Employee** | `emp1@atomberg.com` | Creates goals, logs quarterly check-ins. |
+
+## 🛠️ Local Development
+
+### 1. Clone & Install
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/kartik-kumar-pandey/AtomQuest-Hackathon.git
+cd AtomQuest-Hackathon
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment Variables
+Create a `.env.local` file with your Neon PostgreSQL URL and Auth Secret:
+```env
+NEXTAUTH_SECRET=your_super_secret_string
+DATABASE_URL=your_neon_postgres_url
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Database Setup
+```bash
+# Push the Prisma schema to the database
+npm run db:push
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Seed the database with mock users and hierarchy
+npm run db:seed
+```
 
-## Learn More
+### 4. Run Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-To learn more about Next.js, take a look at the following resources:
+## 🧪 Testing & Validation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This project includes a custom automated system integrity suite to verify complex math algorithms and database models.
+```bash
+# Run the validation suite
+npx tsx scripts/verify-all.ts
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+*Note: For testing purposes, the strict Quarterly Cycle Enforcement has been disabled by default so goals and check-ins can be created at any time of the year.*

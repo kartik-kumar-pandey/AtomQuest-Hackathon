@@ -17,7 +17,7 @@ const QUARTER_MONTHS: Record<QuarterId, number[]> = {
 }
 
 export function isCycleEnforced(): boolean {
-  return process.env.CYCLE_ENFORCE !== "false"
+  return process.env.CYCLE_ENFORCE === "true"
 }
 
 export function isGoalSettingOpen(date = new Date()): boolean {
