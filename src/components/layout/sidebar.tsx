@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import { NotificationsBell } from "./notifications-bell"
+import { Logo } from "../ui/logo"
 
 const employeeNav = [
   { href: "/employee/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -54,12 +55,7 @@ export default function Sidebar() {
     <>
       {/* Mobile Header */}
       <div className="md:hidden shrink-0 flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 z-40 shadow-sm relative">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}>
-            <Target className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-bold text-slate-900 text-sm">MYGoals</span>
-        </div>
+        <Logo showText={true} size={30} />
         <div className="flex items-center gap-1">
           <NotificationsBell />
           <button onClick={() => setIsOpen(true)} className="p-1.5 bg-slate-100 text-slate-600 hover:text-slate-900 rounded-md">
@@ -76,20 +72,7 @@ export default function Sidebar() {
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
         <div className="flex shrink-0 items-center justify-between gap-3 px-6 py-5 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <motion.div
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 400 }}
-            >
-              <Target className="w-5 h-5 text-white" />
-            </motion.div>
-            <div>
-              <p className="font-bold text-slate-900 text-sm leading-none">MYGoals</p>
-              <p className="text-xs mt-0.5 text-slate-500">Goal Portal</p>
-            </div>
-          </div>
+          <Logo showText={true} size={36} />
           <button className="md:hidden text-slate-400 p-1 rounded-md hover:bg-slate-100" onClick={() => setIsOpen(false)}>
             <X className="w-5 h-5" />
           </button>

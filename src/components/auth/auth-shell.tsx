@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { Target, TrendingUp, Users, CheckCircle2 } from "lucide-react"
+import { Logo } from "../ui/logo"
 
 type AuthShellProps = {
   children: React.ReactNode
@@ -20,14 +21,9 @@ export function AuthShell({ children, title, subtitle, footer }: AuthShellProps)
           style={{ background: "radial-gradient(circle, #818cf8 0%, transparent 70%)" }} />
 
         <div className="relative z-10">
-          <Link href="/login" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/25"
-              style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}>
-              <Target className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold tracking-tight" style={{ color: "#1e1b4b" }}>MyGoal</span>
+          <Link href="/login">
+            <Logo showText={true} size={42} />
           </Link>
-          <p className="mt-2 text-sm font-medium" style={{ color: "#6366f1" }}>Goal Tracking Portal</p>
         </div>
 
         <div className="relative z-10 space-y-6 max-w-lg">
@@ -78,11 +74,8 @@ export function AuthShell({ children, title, subtitle, footer }: AuthShellProps)
       {/* Right — form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-10" style={{ background: "#ffffff" }}>
         <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}>
-              <Target className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-lg font-bold" style={{ color: "#1e1b4b" }}>MYGoals</span>
+          <div className="lg:hidden mb-8">
+            <Logo showText={true} size={32} />
           </div>
           <div className="mb-8">
             <h2 className="text-2xl font-bold tracking-tight" style={{ color: "#1e1b4b" }}>{title}</h2>
